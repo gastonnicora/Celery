@@ -6,7 +6,7 @@ WORKDIR /app
 # copy requirements and install (so that changes to files do not mean rebuild cannot be cached)
 COPY ./ .
 
-RUN pip3 --no-cache-dir install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # expose port 80 of the container (HTTP port, change to 443 for HTTPS)
 EXPOSE 80
