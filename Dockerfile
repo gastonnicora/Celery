@@ -1,8 +1,7 @@
 FROM  python:3.8.16-alpine3.18
 WORKDIR /app
 
-# install supervisord
-RUN apt update && apt install -y supervisor
+
 
 # copy requirements and install (so that changes to files do not mean rebuild cannot be cached)
 COPY ./ .
