@@ -47,5 +47,7 @@ def hola():
     hola_as.apply_async(kwargs={'referer':link},countdown=10) 
     return jsonify({"sms":"hola"}),202 
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)
