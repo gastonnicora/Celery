@@ -2,14 +2,15 @@ from flask import Flask,request ,render_template, \
     url_for, jsonify
 from celery import Celery
 import requests as R
+from os import environ
 
 
 app = Flask(__name__)
 
-
+redis= environ.get("REDIS","localhost")
 # Celery configuration
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://'+redis+':6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://'+redis+':6379/0'
 
 
 # Initialize Celery
