@@ -14,4 +14,4 @@ EXPOSE 80
 ENV C_FORCE_ROOT=1
 
 # run supervisord
-CMD ["./supervisord"]
+CMD ["./supervisord.conf"]
