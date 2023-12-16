@@ -1,11 +1,15 @@
 FROM  python:alpine3.19
-WORKDIR /app
+WORKDIR /usr/src/app
 
+# install supervisord
+RUN apt-get update && apt-get install -y supervisor
 
 # copy requirements and install (so that changes to files do not mean rebuild cannot be cached)
-COPY ./ .
+COPY requirements.txt /usr/src/app
+RUN pip install -r requirements.txt
 
-RUN pip3 --no-cache-dir install -r requirements.txt
+# copy all files into the container
+COPY . /usr/src/app
 
 # expose port 80 of the container (HTTP port, change to 443 for HTTPS)
 EXPOSE 80
@@ -14,5 +18,4 @@ EXPOSE 80
 ENV C_FORCE_ROOT=1
 
 # run supervisord
-RUN cd ./app
-CMD ["/supervisord.conf"]
+CMD ["/usr/bin/supervisord"]
