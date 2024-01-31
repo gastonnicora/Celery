@@ -10,9 +10,11 @@ class Session:
     def __init__(cls):
         cls.variable = "Soy un Singleton"
     
-    def addHost(cls, host, token):
-        cls._host[host]=token
+    def addHost(cls, host, token,link):
+        cls._host[host]={"token":token,"link":link}
 
-    def getHost(cls,host):
-        print(cls._host)
-        return cls._host.get(host) 
+    def getToken(cls,host): 
+        return cls._host.get(host)["token"]
+    
+    def getLink(cls,host):
+        return cls._host.get(host)["link"]
