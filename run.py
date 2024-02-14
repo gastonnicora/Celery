@@ -97,13 +97,16 @@ def startedArticle():
     token = Session().getToken(api)
     link = Session().getLink(api)
     data= request.get_json()
+    id = Articles().getTaskId(data.get("article"))
+    if  id != None:
+        celery.control.revoke(id,terminate=True,signal="SIGKILL")
     task=taskStartedArticle.apply_async(kwargs={'referer':link,"uuid":data.get("article"),"token":token},countdown=data.get("time")) 
     Articles().addArticle(data.get("article"),str(task))
     return jsonify({"sms":"hola"}),202 
 
 
 if __name__ == '__main__':
-    # from waitress import serve
-    app.run(host="0.0.0.0", port=5000, debug=True)
-    # serve(app, host="0.0.0.0", port=5000)
+    from waitress import serve
+    # app.run(host="0.0.0.0", port=5000, debug=True)
+    serve(app, host="0.0.0.0", port=5000)
  
