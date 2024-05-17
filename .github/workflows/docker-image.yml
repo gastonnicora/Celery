@@ -47,7 +47,7 @@ jobs:
         context: .
         file: ./Dockerfile
         tags: |
-          gastonnicora/celery:${{ env.SOURCE_NAME }}
+          gastonnicora/remates-celery:${{ env.SOURCE_NAME }}
       env:
         SOURCE_NAME: ${{ steps.prepare_source.outputs.SOURCE_NAME }}
 
