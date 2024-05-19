@@ -1,4 +1,5 @@
 # celery
+comandos.txt
 *.rdb
 # Byte-compiled / optimized / DLL files
 __pycache__/
