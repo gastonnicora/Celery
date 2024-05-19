@@ -59,7 +59,7 @@ def deleteConfirm(uuid):
     for key, value in request_data.items():
         print(f"{key}: {value}")
     deleteConfirm_as.apply_async(kwargs={"uuid":uuid},countdown=24*60*60) 
-    return jsonify({"sms":"hola"}),202 
+    return jsonify({"sms":"hola"}),20 
 
 
 @app.route("/finishedArticle",methods=["POST"])

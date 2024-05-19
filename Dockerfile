@@ -17,7 +17,6 @@ EXPOSE 80
 # needs to be set else Celery gives an error (because docker runs commands inside container as root)
 ENV C_FORCE_ROOT=1
 ENV REDIS=redis
-ENV API=api:4000
 
 # run supervisord
 CMD ["/usr/bin/supervisord"]
