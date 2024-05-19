@@ -59,7 +59,7 @@ def deleteConfirm(uuid):
     for key, value in request_data.items():
         print(f"{key}: {value}")
     deleteConfirm_as.apply_async(kwargs={"uuid":uuid},countdown=24*60*60) 
-    return jsonify({"sms":"hola"}),20 
+    return jsonify({"sms":"hola"}),200
 
 
 @app.route("/finishedArticle",methods=["POST"])
@@ -70,7 +70,7 @@ def finishedArticle():
         celery.control.revoke(id,terminate=True,signal="SIGKILL")
     task=taskFinishedArticle.apply_async(kwargs={"uuid":data.get("article")},countdown=data.get("time")) 
     Articles().addArticle(data.get("article"),str(task))
-    return jsonify({"sms":"hola"}),202 
+    return jsonify({"sms":"hola"}),200 
 
 @app.route("/startedArticle",methods=["POST"])
 def startedArticle():
@@ -80,7 +80,7 @@ def startedArticle():
         celery.control.revoke(id,terminate=True,signal="SIGKILL")
     task=taskStartedArticle.apply_async(kwargs={"uuid":data.get("article")},countdown=data.get("time")) 
     Articles().addArticle(data.get("article"),str(task))
-    return jsonify({"sms":"hola"}),202 
+    return jsonify({"sms":"hola"}),200 
 
 
 if __name__ == '__main__':
