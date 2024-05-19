@@ -62,7 +62,7 @@ def deleteConfirm(uuid):
     api= request.headers.get("Referer")
     token = Session().getToken(api)
     link= Session().getLink(api)
-    deleteConfirm_as.apply_async(kwargs={'referer':link,"uuid":uuid,"token":token},countdown=30) 
+    deleteConfirm_as.apply_async(kwargs={'referer':link,"uuid":uuid,"token":token},countdown=24*60*60) 
     return jsonify({"sms":"hola"}),202 
 
 @app.route("/ping")  
