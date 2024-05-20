@@ -1,92 +1,94 @@
 import json
 import os
-from flask import Flask,request , jsonify
+from flask import Flask
 from celery import Celery
 import requests as R
-from os import environ
 from article import Articles
+import redis
+import threading
 
-
+# Configuración de Flask
 app = Flask(__name__)
 
-redis= environ.get("REDIS","localhost")
-api=  "http://"+environ.get("API", "127.0.0.1:4000")
-# Celery configuration
-app.config['CELERY_BROKER_URL'] = 'redis://'+redis+':6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://'+redis+':6379/0'
+# Configuración de Redis
+redis_host = os.environ.get("REDIS", "localhost")
+redis_client = redis.Redis(host=redis_host, port=6379)
 
+# Configuración de la API
+api_url = "http://" + os.environ.get("API", "127.0.0.1:4000")
 
-# Initialize Celery
+# Configuración de Celery
+app.config['CELERY_BROKER_URL'] = 'redis://' + redis_host + ':6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://' + redis_host + ':6379/0'
+
+# Inicialización de Celery
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
+# Definición de tareas de Celery
+@celery.task(bind=True)
+def deleteConfirm_as(self, uuid):
+    R.get(api_url + "/confirmEmailDelete/" + uuid)
 
 @celery.task(bind=True)
-def deleteConfirm_as(self,uuid):
-    r=R.get(api +"/confirmEmailDelete/"+uuid)
+def taskFinishedArticle(self, uuid):
+    R.put(api_url + "/articleFinish/" + uuid)
 
 @celery.task(bind=True)
-def taskFinishedArticle(self,uuid):
-    r=R.put(api +"/articleFinish/"+uuid)
-    
+def taskStartedArticle(self, uuid):
+    R.put(api_url + "/articleStart/" + uuid)
 
-@celery.task(bind=True)
-def taskStartedArticle(self,uuid):
-    r=R.put(api +"/articleStart/"+uuid)
-    
-    
+def deleteConfirm(data):
+    deleteConfirm_as.apply_async(kwargs={"uuid": data["uuid"]}, countdown=24*60*60)
 
+def finishedArticle(data):
+    article_id = data["article"]
+    time = data["time"]
+    task_id = Articles().getTaskId(article_id)
+    if task_id:
+        celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
+    task = taskFinishedArticle.apply_async(kwargs={"uuid": article_id}, countdown=time)
+    Articles().addArticle(article_id, str(task))
 
+def startedArticle(data):
+    article_id = data["article"]
+    time = data["time"]
+    task_id = Articles().getTaskId(article_id)
+    if task_id:
+        celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
+    task = taskStartedArticle.apply_async(kwargs={"uuid": article_id}, countdown=time)
+    Articles().addArticle(article_id, str(task))
 
-@app.route('/deleteConfirm/<string:uuid>')
-def deleteConfirm(uuid):
-    request_data = {
-        "method": request.method,
-        "url": request.url,
-        "base_url": request.base_url,
-        "host_url": request.host_url,
-        "path": request.path,
-        "full_path": request.full_path,
-        "headers": {header: value for header, value in request.headers.items()},
-        "args": request.args.to_dict(),
-        "form": request.form.to_dict(),
-        "json": request.get_json(silent=True),
-        "cookies": request.cookies.to_dict(),
-        "remote_addr": request.remote_addr,
-        "user_agent": str(request.user_agent)
-    }
-    
-    print("Request Data:")
-    for key, value in request_data.items():
-        print(f"{key}: {value}")
-    deleteConfirm_as.apply_async(kwargs={"uuid":uuid},countdown=24*60*60) 
-    return jsonify({"sms":"hola"}),200
+tasks = {
+    "deleteConfirm": deleteConfirm,
+    "finishedArticle": finishedArticle,
+    "startedArticle": startedArticle
+}
 
+# Función para manejar mensajes de Redis
+def handle_message(message):
+    if message['type'] == 'message':
+        data = json.loads(message['data'])
+        task_name = data['task_name']
+        if task_name in tasks:
+            tasks[task_name](data)
 
-@app.route("/finishedArticle",methods=["POST"])
-def finishedArticle():
-    data= request.get_json()
-    id = Articles().getTaskId(data.get("article"))
-    if  id != None:
-        celery.control.revoke(id,terminate=True,signal="SIGKILL")
-    task=taskFinishedArticle.apply_async(kwargs={"uuid":data.get("article")},countdown=data.get("time")) 
-    Articles().addArticle(data.get("article"),str(task))
-    return jsonify({"sms":"hola"}),200 
+# Suscripción a mensajes de Redis
+def subscribe_to_redis():
+    pubsub = redis_client.pubsub()
+    pubsub.subscribe(**{'task_channel': handle_message})
+    print('Listening for messages on task_channel...')
+    for message in pubsub.listen():
+        if message['type'] == 'message':
+            handle_message(message)
 
-@app.route("/startedArticle",methods=["POST"])
-def startedArticle():
-    data= request.get_json()
-    id = Articles().getTaskId(data.get("article"))
-    if  id != None:
-        celery.control.revoke(id,terminate=True,signal="SIGKILL")
-    task=taskStartedArticle.apply_async(kwargs={"uuid":data.get("article")},countdown=data.get("time")) 
-    Articles().addArticle(data.get("article"),str(task))
-    return jsonify({"sms":"hola"}),200 
-
+# Iniciar la suscripción a Redis en un hilo separado
+def run_redis_subscriber():
+    thread = threading.Thread(target=subscribe_to_redis)
+    thread.start()
 
 if __name__ == '__main__':
+    run_redis_subscriber()
     from waitress import serve
     os.environ['FLASK_ENV'] = 'development'
-    # app.run(host="0.0.0.0", port=5000, debug=True)
     serve(app, host="0.0.0.0", port=5000)
- 
