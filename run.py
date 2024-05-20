@@ -10,7 +10,7 @@ from article import Articles
 app = Flask(__name__)
 
 redis= environ.get("REDIS","localhost")
-api= {"link": "http://localhost:4000"}
+api=  "http://"+environ.get("API", "127.0.0.1:4000")
 # Celery configuration
 app.config['CELERY_BROKER_URL'] = 'redis://'+redis+':6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://'+redis+':6379/0'
@@ -23,16 +23,16 @@ celery.conf.update(app.config)
 
 @celery.task(bind=True)
 def deleteConfirm_as(self,uuid):
-    r=R.get(api.link+"/confirmEmailDelete/"+uuid)
+    r=R.get(api +"/confirmEmailDelete/"+uuid)
 
 @celery.task(bind=True)
 def taskFinishedArticle(self,uuid):
-    r=R.put(api.link+"/articleFinish/"+uuid)
+    r=R.put(api +"/articleFinish/"+uuid)
     
 
 @celery.task(bind=True)
 def taskStartedArticle(self,uuid):
-    r=R.put(api.link+"/articleStart/"+uuid)
+    r=R.put(api +"/articleStart/"+uuid)
     
     
 
