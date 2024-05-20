@@ -1,4 +1,5 @@
 import json
+import os
 from flask import Flask,request , jsonify
 from celery import Celery
 import requests as R
@@ -85,6 +86,7 @@ def startedArticle():
 
 if __name__ == '__main__':
     from waitress import serve
+    os.environ['FLASK_ENV'] = 'development'
     # app.run(host="0.0.0.0", port=5000, debug=True)
-    serve(app, host="0.0.0.0", port=5000, debug=True)
+    serve(app, host="0.0.0.0", port=5000)
  
