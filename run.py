@@ -87,7 +87,7 @@ def startedAuction(data):
     task = taskStartedAuction.apply_async(kwargs={"uuid": article_id}, countdown=time)
     Articles().addArticle(article_id, str(task))
 
-def finishedArticle(data):
+def finishedAuction(data):
     article_id = data["article"]
     date_format="%d/%m/%YT%H:%M:%S%z"
     d=  datetime.datetime.strptime(data["time"], date_format)
