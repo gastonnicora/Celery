@@ -81,6 +81,8 @@ def startedAuction(data):
     now=datetime.datetime.now()
     now=now.astimezone(datetime.timezone.utc)
     time= (d-now).total_seconds()
+    if time <0:
+        time=0
     task_id = Articles().getTaskId(article_id)
     if task_id:
         celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
@@ -95,6 +97,8 @@ def finishedAuction(data):
     now=datetime.datetime.now()
     now=now.astimezone(datetime.timezone.utc)
     time= (d-now).total_seconds()
+    if time <0:
+        time=0
     task_id = Articles().getTaskId(article_id)
     if task_id:
         celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
