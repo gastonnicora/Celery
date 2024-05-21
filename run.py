@@ -70,7 +70,7 @@ def startedArticle(data):
     task_id = Articles().getTaskId(article_id)
     if task_id:
         celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
-    task = taskStartedArticle.apply_async(kwargs={"uuid": article_id}, countdown=time)
+    task = taskStartedArticle.apply_async(kwargs={"data": data}, countdown=time)
     Articles().addArticle(article_id, str(task))
 
 def startedAuction(data):
@@ -84,7 +84,7 @@ def startedAuction(data):
     task_id = Articles().getTaskId(article_id)
     if task_id:
         celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
-    task = taskStartedAuction.apply_async(kwargs={"uuid": article_id}, countdown=time)
+    task = taskStartedAuction.apply_async(kwargs={"data": data}, countdown=time)
     Articles().addArticle(article_id, str(task))
 
 def finishedAuction(data):
