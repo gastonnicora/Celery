@@ -6,6 +6,7 @@ import requests as R
 from article import Articles
 import redis
 import threading
+import datetime
 
 # Configuración de Flask
 app = Flask(__name__)
@@ -28,15 +29,28 @@ celery.conf.update(app.config)
 # Definición de tareas de Celery
 @celery.task(bind=True)
 def deleteConfirm_as(self, uuid):
+    headers = {'content-type': 'application/json'}
     R.get(api_url + "/confirmEmailDelete/" + uuid)
 
 @celery.task(bind=True)
-def taskFinishedArticle(self, uuid):
-    R.put(api_url + "/articleFinish/" + uuid)
+def taskFinishedArticle(self, data):
+    headers = {'x-access-tokens': data["token"]}
+    R.put(api_url + "/articleFinish/" + data["uuid"], headers=headers)
 
 @celery.task(bind=True)
-def taskStartedArticle(self, uuid):
-    R.put(api_url + "/articleStart/" + uuid)
+def taskStartedArticle(self, data):
+    headers = {'x-access-tokens': data["token"]}
+    R.put(api_url + "/articleStart/" + data["uuid"], headers=headers)
+
+@celery.task(bind=True)
+def taskStartedAuction(self, data):
+    headers = {'x-access-tokens': data["token"]}
+    R.put(api_url + "/auctionsStart/" + data["uuid"], headers=headers)
+
+@celery.task(bind=True)
+def taskFinishedAuction(self, data):
+    headers = {'x-access-tokens': data["token"]}
+    R.put(api_url + "/auctionFinished/" + data["uuid"], headers=headers)
 
 def deleteConfirm(data):
     deleteConfirm_as.apply_async(kwargs={"uuid": data["uuid"]}, countdown=24*60*60)
@@ -47,7 +61,7 @@ def finishedArticle(data):
     task_id = Articles().getTaskId(article_id)
     if task_id:
         celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
-    task = taskFinishedArticle.apply_async(kwargs={"uuid": article_id}, countdown=time)
+    task = taskFinishedArticle.apply_async(kwargs={"data": data}, countdown=time)
     Articles().addArticle(article_id, str(task))
 
 def startedArticle(data):
@@ -59,10 +73,42 @@ def startedArticle(data):
     task = taskStartedArticle.apply_async(kwargs={"uuid": article_id}, countdown=time)
     Articles().addArticle(article_id, str(task))
 
+def startedAuction(data):
+    article_id = data["article"]
+    date_format="%d/%m/%YT%H:%M:%S%z"
+    d=  datetime.datetime.strptime(data["time"], date_format)
+    d=d.astimezone(datetime.timezone.utc)
+    now=datetime.datetime.now()
+    now=now.astimezone(datetime.timezone.utc)
+    time= (d-now).total_seconds()
+    task_id = Articles().getTaskId(article_id)
+    if task_id:
+        celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
+    task = taskStartedAuction.apply_async(kwargs={"uuid": article_id}, countdown=time)
+    Articles().addArticle(article_id, str(task))
+
+def finishedArticle(data):
+    article_id = data["article"]
+    date_format="%d/%m/%YT%H:%M:%S%z"
+    d=  datetime.datetime.strptime(data["time"], date_format)
+    d=d.astimezone(datetime.timezone.utc)
+    now=datetime.datetime.now()
+    now=now.astimezone(datetime.timezone.utc)
+    time= (d-now).total_seconds()
+    task_id = Articles().getTaskId(article_id)
+    if task_id:
+        celery.control.revoke(task_id, terminate=True, signal="SIGKILL")
+    task = taskFinishedAuction.apply_async(kwargs={"data": data}, countdown=time)
+    Articles().addArticle(article_id, str(task))
+
+
 tasks = {
     "deleteConfirm": deleteConfirm,
     "finishedArticle": finishedArticle,
-    "startedArticle": startedArticle
+    "startedArticle": startedArticle,
+    "startedAuction":startedAuction,
+    "finishedAuction": finishedAuction
+
 }
 
 # Función para manejar mensajes de Redis
@@ -90,5 +136,5 @@ def run_redis_subscriber():
 if __name__ == '__main__':
     run_redis_subscriber()
     from waitress import serve
-    os.environ['FLASK_ENV'] = 'development'
+    os.environ['FLASK_ENV'] = 'development' 
     serve(app, host="0.0.0.0", port=5000)
