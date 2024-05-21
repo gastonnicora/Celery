@@ -19,8 +19,10 @@ redis_client = redis.Redis(host=redis_host, port=6379)
 api_url = "http://" + os.environ.get("API", "127.0.0.1:4000")
 
 # Configuración de Celery
-app.config['CELERY_BROKER_URL'] = 'redis://' + redis_host + ':6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://' + redis_host + ':6379/0'
+app.conf.update(
+    broker_url=f'redis://{redis_host}:6379/0',
+    result_backend='redis://{redis_host}:6379/0'
+)
 
 # Inicialización de Celery
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
