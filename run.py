@@ -57,7 +57,7 @@ def taskStartedArticle(self, data):
 @celery.task(bind=True)
 def taskStartedAuction(self, data):
     headers = {'x-access-tokens': data["token"]}
-    r= R.put(api_url + "/auctionsStart/" + data["article"], headers=headers)
+    r= R.put(api_url + "/auctionStart/" + data["article"], headers=headers)
     try:
         return r.status_code, r.json()
     except:
