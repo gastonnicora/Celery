@@ -30,27 +30,32 @@ celery.conf.update(app.config)
 @celery.task(bind=True)
 def deleteConfirm_as(self, uuid):
     headers = {'content-type': 'application/json'}
-    R.get(api_url + "/confirmEmailDelete/" + uuid)
+    r= R.get(api_url + "/confirmEmailDelete/" + uuid)
+    return r.status_code
 
 @celery.task(bind=True)
 def taskFinishedArticle(self, data):
     headers = {'x-access-tokens': data["token"]}
-    R.put(api_url + "/articleFinish/" + data["article"], headers=headers)
+    r= R.put(api_url + "/articleFinish/" + data["article"], headers=headers)
+    return r.status_code
 
 @celery.task(bind=True)
 def taskStartedArticle(self, data):
     headers = {'x-access-tokens': data["token"]}
-    R.put(api_url + "/articleStart/" + data["article"], headers=headers)
+    r= R.put(api_url + "/articleStart/" + data["article"], headers=headers)
+    return r.status_code
 
 @celery.task(bind=True)
 def taskStartedAuction(self, data):
     headers = {'x-access-tokens': data["token"]}
-    R.put(api_url + "/auctionsStart/" + data["article"], headers=headers)
+    r= R.put(api_url + "/auctionsStart/" + data["article"], headers=headers)
+    return r.status_code
 
 @celery.task(bind=True)
 def taskFinishedAuction(self, data):
     headers = {'x-access-tokens': data["token"]}
-    R.put(api_url + "/auctionFinished/" + data["article"], headers=headers)
+    r= R.put(api_url + "/auctionFinished/" + data["article"], headers=headers)
+    return r.status_code
 
 def deleteConfirm(data):
     deleteConfirm_as.apply_async(kwargs={"uuid": data["uuid"]}, countdown=24*60*60)
