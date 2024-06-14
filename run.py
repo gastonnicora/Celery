@@ -57,6 +57,7 @@ def taskStartedArticle(self, data):
 @celery.task(bind=True)
 def taskStartedAuction(self, data):
     headers = {'x-access-tokens': data["token"]}
+    print(api_url)
     r= R.put(api_url + "/auctionStart/" + data["article"], headers=headers)
     try:
         return r.status_code, r.json()
