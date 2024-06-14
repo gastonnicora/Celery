@@ -7,6 +7,7 @@ from article import Articles
 import redis
 import threading
 import datetime
+from time import sleep
 
 # Configuración de Flask
 app = Flask(__name__)
@@ -31,6 +32,7 @@ celery.conf.update(app.config)
 def deleteConfirm_as(self, uuid):
     headers = {'content-type': 'application/json'}
     r= R.get(api_url + "/confirmEmailDelete/" + uuid)
+    sleep(1)
     try:
         return r.status_code, r.json()
     except:
@@ -56,6 +58,7 @@ def taskStartedArticle(self, data):
 
 @celery.task(bind=True)
 def taskStartedAuction(self, data):
+    sleep(1)
     headers = {'x-access-tokens': data["token"]}
     print(api_url)
     r= R.put(api_url + "/auctionStart/" + data["article"], headers=headers)
