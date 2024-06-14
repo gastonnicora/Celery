@@ -61,7 +61,7 @@ def taskStartedAuction(self, data):
     sleep(1)
     headers = {'x-access-tokens': data["token"]}
     print(api_url)
-    r= R.put(api_url + "/auctionStart/" + data["article"], headers=headers)
+    r= R.put(api_url + "/auctionStart/" + data["article"], headers=headers, timeout=30)
     try:
         return r.status_code, r.json()
     except:
