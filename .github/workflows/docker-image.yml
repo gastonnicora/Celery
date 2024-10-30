@@ -71,8 +71,6 @@ jobs:
           tags: |
             gastonnicora/remates-celery:${{ env.SOURCE_NAME }}
             gastonnicora/remates-celery:${{ env.NEW_VERSION }}
-        env:
-          SOURCE_NAME: ${{ steps.prepare_source.outputs.SOURCE_NAME }}
       
       - name: Commit version.txt
         run: |
