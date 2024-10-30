@@ -1,56 +1,88 @@
 name: CELERY
 
+permissions:
+  contents: write
+
 on:
-  # Trigger: cuando se actualicen las branchs o tags
   push:
     branches:
-    - "main"
-    - "release-*"
+      - "main"
+      - "release-*"
+      - "*"
     tags:
-    - "v*"
+      - "v*"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    # Step 1: Descarga el repositorio
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    # Step 2: Identifica el nombre de la tag / branch de git
-    - name: "Prepare source name: Tag or branch name"
-      id: prepare_source
-      run: |
-        SOURCE_NAME="${GITHUB_REF#refs/*/}"
-        [ $SOURCE_NAME == "main" ] && SOURCE_NAME="latest"
-        echo ::set-output name=SOURCE_NAME::${SOURCE_NAME}
+      - name: "Prepare source name: Tag or branch name"
+        id: prepare_source
+        run: |
+          SOURCE_NAME="${GITHUB_REF#refs/*/}"
+          VERSION_FILE=version.txt
 
-    # Steps 3 y 4: Requisitos QEMU y Buildx
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+          # Leer la versión actual desde el archivo (version.txt) o usar '0.0' si no existe
+          if [ -f $VERSION_FILE ]; then
+            CURRENT_VERSION=$(cat $VERSION_FILE)
+          else
+            CURRENT_VERSION="0.0"
+          fi
 
-    # Step 5: Autenticación en el registry
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.USERNAME }}
-        password: ${{ secrets.PASS }}
+          if [ "$SOURCE_NAME" == "main" ]; then
+            # Incrementar la parte 'x' de la versión y reiniciar 'y'
+            IFS='.' read -r x y <<< "$CURRENT_VERSION"
+            NEW_VERSION="$((x + 1)).$y"
+            echo "SOURCE_NAME=latest" >> $GITHUB_ENV
+            SAVE="$((x + 1)).0"
+          else 
+            # Incrementar la parte 'y' de la versión
+            IFS='.' read -r x y <<< "$CURRENT_VERSION"
+            NEW_VERSION="$x.$((y + 1))"
+            echo "SOURCE_NAME=$NEW_VERSION" >> $GITHUB_ENV
+            SAVE="$NEW_VERSION"
+          fi
 
-     # Step 6: Construcción y publicación de la imagen
-    - name: Build and push
-      id: docker_build
-      uses: docker/build-push-action@v3
-      with:
-        push: true
-        context: .
-        file: ./Dockerfile
-        tags: |
-          gastonnicora/remates-celery:${{ env.SOURCE_NAME }}
-      env:
-        SOURCE_NAME: ${{ steps.prepare_source.outputs.SOURCE_NAME }}
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "SAVE=$SAVE" >> $GITHUB_ENV
 
-    # Step 7: Muestra el digest de la imagen
-    - name: Image digest
-      run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASS }}
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          context: .
+          file: ./Dockerfile
+          tags: |
+            gastonnicora/remates-celery:${{ env.SOURCE_NAME }}
+            gastonnicora/remates-celery:${{ env.NEW_VERSION }}
+        env:
+          SOURCE_NAME: ${{ steps.prepare_source.outputs.SOURCE_NAME }}
+      
+      - name: Commit version.txt
+        run: |
+          VERSION_FILE=version.txt
+          echo "${{ env.SAVE }}" > $VERSION_FILE
+          git config --local user.name "github-actions"
+          git config --local user.email "action@github.com"
+          git add $VERSION_FILE
+          git commit -m "Update version.txt to $SAVE" || echo "No changes to commit"
+          git push
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
