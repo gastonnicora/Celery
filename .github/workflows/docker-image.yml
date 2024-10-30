@@ -48,6 +48,7 @@ jobs:
 
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "SAVE=$SAVE" >> $GITHUB_ENV
+          echo "::set-output name=SOURCE_NAME::$SOURCE_NAME"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
