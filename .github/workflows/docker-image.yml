@@ -86,4 +86,4 @@ jobs:
           git push
 
       - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+        run: echo ${{ steps.docker_build.outputs.digest }} 
