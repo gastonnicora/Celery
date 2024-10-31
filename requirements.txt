@@ -8,8 +8,6 @@ click==8.1.7
 click-didyoumean==0.3.1
 click-plugins==1.1.1
 click-repl==0.3.0
-distlib==0.3.8
-filelock==3.15.4
 Flask==3.0.3
 flower==2.0.1
 humanize==4.11.0
@@ -18,7 +16,6 @@ itsdangerous==2.2.0
 Jinja2==3.1.4
 kombu==5.4.2
 MarkupSafe==3.0.2
-platformdirs==4.2.2
 prometheus_client==0.21.0
 prompt_toolkit==3.0.48
 python-dateutil==2.9.0.post0
@@ -30,6 +27,6 @@ tornado==6.4.1
 tzdata==2024.2
 urllib3==2.2.3
 vine==5.1.0
-virtualenv==20.26.3
+waitress==3.0.1
 wcwidth==0.2.13
-Werkzeug==3.0.6
+Werkzeug==3.1.0
