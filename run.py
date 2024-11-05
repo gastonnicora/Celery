@@ -2,6 +2,7 @@
 import os
 from flask import Flask
 from app.redis import run_redis_subscriber
+from app.celery import celery
 
 app = Flask(__name__)
 

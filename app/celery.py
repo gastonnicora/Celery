@@ -5,6 +5,7 @@ import os
 
 
 redis_host = os.environ.get("REDIS", "localhost")
+
 # Inicialización de Celery
 celery = Celery(__name__, broker='redis://' + redis_host + ':6379/0')
 celery.conf.update(
