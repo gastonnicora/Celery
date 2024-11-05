@@ -1,7 +1,7 @@
 import json
 import threading
 import redis
-from mediador import deleteConfirm, finishedArticle, startedArticle, startedAuction,finishedAuction
+from app.mediador import deleteConfirm, finishedArticle, startedArticle, startedAuction,finishedAuction
 
 
 
