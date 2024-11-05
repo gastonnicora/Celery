@@ -1,6 +1,7 @@
 import json
 import threading
 import redis
+import os
 from app.mediador import deleteConfirm, finishedArticle, startedArticle, startedAuction,finishedAuction
 
 
